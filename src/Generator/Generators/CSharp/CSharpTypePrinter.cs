@@ -222,16 +222,22 @@ namespace CppSharp.Generators.CSharp
         {
             var pointee = pointer.Pointee;
 
+            string str = "";
+            if(pointer.IsPointerToPrimitiveType(PrimitiveType.Char))
+            {
+                str =  "/*Char* to be marshalled to StringBuilder...*/";
+            }
+
             if (pointee is FunctionType)
             {
                 var function = pointee as FunctionType;
-                return string.Format("{0}", function.Visit(this, quals));
+                return str + string.Format("{0}", function.Visit(this, quals));
             }
 
             var isManagedContext = ContextKind == CSharpTypePrinterContextKind.Managed;
 
             if (AllowStrings && IsConstCharString(pointer))
-                return isManagedContext ? "string" : "global::System.IntPtr";
+                return str + (isManagedContext ? "string" : "global::System.IntPtr");
 
             var desugared = pointee.Desugar();
 
@@ -248,11 +254,11 @@ namespace CppSharp.Generators.CSharp
                 var param = Context.Parameter;
                 bool isRefParam = param != null && (param.IsOut || param.IsInOut);
                 if (isManagedContext && isRefParam)
-                    return pointee.Visit(this, quals);
+                    return str + pointee.Visit(this, quals);
 
                 if (ContextKind == CSharpTypePrinterContextKind.GenericDelegate ||
                     pointee.IsPrimitiveType(PrimitiveType.Void))
-                    return "global::System.IntPtr";
+                    return str + "global::System.IntPtr";
 
                 // Do not allow strings inside primitive arrays case, else we'll get invalid types
                 // like string* for const char **.
@@ -260,7 +266,7 @@ namespace CppSharp.Generators.CSharp
                 var result = pointee.Visit(this, quals);
                 AllowStrings = true;
 
-                return !isRefParam && result.Type == "global::System.IntPtr" ? "void**" : result + "*";
+                return str + (!isRefParam && result.Type == "global::System.IntPtr" ? "void**" : result + "*");
             }
 
             Enumeration @enum;
@@ -270,19 +276,19 @@ namespace CppSharp.Generators.CSharp
                 var param = Context.Parameter;
                 if (isManagedContext && param != null && (param.IsOut || param.IsInOut)
                     && pointee == finalPointee)
-                    return pointee.Visit(this, quals);
+                    return str + pointee.Visit(this, quals);
 
-                return pointee.Visit(this, quals) + "*";
+                return str + pointee.Visit(this, quals) + "*";
             }
 
             Class @class;
             if ((desugared.IsDependent || desugared.TryGetClass(out @class))
                 && ContextKind == CSharpTypePrinterContextKind.Native)
             {
-                return "global::System.IntPtr";
+                return str + "global::System.IntPtr";
             }
 
-            return pointee.Visit(this, quals);
+            return str + pointee.Visit(this, quals);
         }
 
         public CSharpTypePrinterResult VisitMemberPointerType(MemberPointerType member,

@@ -25,6 +25,7 @@ namespace CppSharp.Tests
         public static void Main(string[] args)
         {
             ConsoleDriver.Run(new UTF16Tests(GeneratorKind.CSharp));
+            ConsoleDriver.Run(new UTF16Tests(GeneratorKind.CLI));
         }
     }
 }

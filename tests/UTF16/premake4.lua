@@ -1,2 +1,2 @@
 group "Tests/UTF16"
-  SetupTestCSharp("UTF16")
+  SetupTestProject("UTF16")
